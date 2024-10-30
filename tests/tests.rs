@@ -4,12 +4,6 @@ use ic_cdk::api::management_canister::main::CanisterId;
 use ic_vetkd_utils::TransportSecretKey;
 use pocket_ic::{PocketIc, WasmResult};
 
-use ic_cdk::api::management_canister::ecdsa::EcdsaCurve;
-use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
-use ic_cdk::api::management_canister::ecdsa::EcdsaPublicKeyArgument;
-use ic_cdk::api::management_canister::ecdsa::EcdsaPublicKeyResponse;
-use ic_cdk::api::management_canister::ecdsa::SignWithEcdsaArgument;
-use ic_cdk::api::management_canister::ecdsa::SignWithEcdsaResponse;
 use chainkey_testing_canister::schnorr::SchnorrAlgorithm;
 use chainkey_testing_canister::schnorr::SchnorrKeyId;
 use chainkey_testing_canister::schnorr::SchnorrPublicKeyArgs;
@@ -22,6 +16,12 @@ use chainkey_testing_canister::vetkd::VetKDEncryptedKeyRequest;
 use chainkey_testing_canister::vetkd::VetKDKeyId;
 use chainkey_testing_canister::vetkd::VetKDPublicKeyReply;
 use chainkey_testing_canister::vetkd::VetKDPublicKeyRequest;
+use ic_cdk::api::management_canister::ecdsa::EcdsaCurve;
+use ic_cdk::api::management_canister::ecdsa::EcdsaKeyId;
+use ic_cdk::api::management_canister::ecdsa::EcdsaPublicKeyArgument;
+use ic_cdk::api::management_canister::ecdsa::EcdsaPublicKeyResponse;
+use ic_cdk::api::management_canister::ecdsa::SignWithEcdsaArgument;
+use ic_cdk::api::management_canister::ecdsa::SignWithEcdsaResponse;
 
 pub const CANISTER_WASM: &[u8] =
     include_bytes!("../target/wasm32-unknown-unknown/release/chainkey_testing_canister.wasm");
