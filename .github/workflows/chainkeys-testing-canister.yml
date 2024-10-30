@@ -1,0 +1,53 @@
+name: chainkeys-testing-canister
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - '**'
+      - .github/workflows/provision-darwin.sh
+      - .github/workflows/provision-linux.sh
+      - .github/workflows/chainkeys-testing-canister.yml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  chainkeys-testing-canister-darwin:
+    runs-on: macos-12
+    steps:
+      - uses: actions/checkout@v1
+      - name: Provision Darwin
+        run: bash .github/workflows/provision-darwin.sh
+      - name: Install PocketIC server Darwin
+        uses: dfinity/pocketic@main
+        with:
+          pocket-ic-server-version: "6.0.0"
+      - name: Build chainkeys-testing-canister Darwin
+        run: |
+          cargo build --target wasm32-unknown-unknown --release
+      - name: Lint chainkeys-testing-canister Darwin
+        run: |
+          cargo fmt --all -- --check && cargo clippy --all-targets --all-features -- -D warnings
+      - name: Test chainkeys-testing-canister Darwin
+        run: |
+          cargo test
+  chainkeys-testing-canister-linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: Provision Linux
+        run: bash .github/workflows/provision-linux.sh
+      - name: Install PocketIC server Linux
+        uses: dfinity/pocketic@main
+        with:
+          pocket-ic-server-version: "6.0.0"
+      - name: Build chainkeys-testing-canister Linux
+        run: |
+          cargo build --target wasm32-unknown-unknown --release
+      - name: Lint chainkeys-testing-canister Linux
+        run: |
+          cargo fmt --all -- --check && cargo clippy --all-targets --all-features -- -D warnings
+      - name: Test chainkeys-testing-canister Linux
+        run: |
+          cargo test
