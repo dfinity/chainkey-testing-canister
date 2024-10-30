@@ -16,7 +16,7 @@ In particular, the canister provides fake implementations of the following Inter
 
 The canister is deployed on mainnet: the canister ID is `vrqyr-saaaa-aaaan-qzn4q-cai` ([dashboard](https://dashboard.internetcomputer.org/canister/vrqyr-saaaa-aaaan-qzn4q-cai), [candid-ui](https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=vrqyr-saaaa-aaaan-qzn4q-cai)).
 
-All APIs support a single key ID: `insecure_mock_key_1`.
+All APIs support a single key ID: `insecure_test_key_1`.
 
 For the time being, no fees are charged. If canister usage becomes excessive, we will introduce fees but aim to keep these fees significantly lower than the [fees of the production APIs](https://internetcomputer.org/docs/current/references/t-sigs-how-it-works#api-fee). The community is invited to top up the canister with cycles.
 

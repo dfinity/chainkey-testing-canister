@@ -33,7 +33,7 @@ fn should_verify_ecdsa_signature() {
     let derivation_path = vec!["test-derivation-path".as_bytes().to_vec()];
     let key_id = EcdsaKeyId {
         curve: EcdsaCurve::Secp256k1,
-        name: "insecure_mock_key_1".to_string(),
+        name: "insecure_test_key_1".to_string(),
     };
     let message_hash = b"12345678901234567890123456789012".to_vec();
 
@@ -72,7 +72,7 @@ fn should_verify_schnorr_bip340_secp256k1_signature() {
     let derivation_path = vec!["test-derivation-path".as_bytes().to_vec()];
     let key_id = SchnorrKeyId {
         algorithm: SchnorrAlgorithm::Bip340Secp256k1,
-        name: "insecure_mock_key_1".to_string(),
+        name: "insecure_test_key_1".to_string(),
     };
     let message = b"test-message".to_vec();
 
@@ -107,7 +107,7 @@ fn should_verify_schnorr_ed25519_signature() {
     let derivation_path = vec!["test-derivation-path".as_bytes().to_vec()];
     let key_id = SchnorrKeyId {
         algorithm: SchnorrAlgorithm::Ed25519,
-        name: "insecure_mock_key_1".to_string(),
+        name: "insecure_test_key_1".to_string(),
     };
     let message = b"test-message".to_vec();
 
@@ -145,7 +145,7 @@ fn should_consistently_derive_vetkey() {
     let derivation_path = vec!["test-derivation-path".as_bytes().to_vec()];
     let key_id = VetKDKeyId {
         curve: VetKDCurve::Bls12_381,
-        name: "insecure_mock_key_1".to_string(),
+        name: "insecure_test_key_1".to_string(),
     };
     let derivation_id = b"test-derivation-id".to_vec();
 

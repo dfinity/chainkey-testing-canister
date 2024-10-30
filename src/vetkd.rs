@@ -71,7 +71,7 @@ lazy_static::lazy_static! {
 #[update]
 async fn vetkd_public_key(request: VetKDPublicKeyRequest) -> VetKDPublicKeyReply {
     inc_call_count("vetkd_public_key".to_string());
-    ensure_bls12_381_insecure_mock_key_1(request.key_id);
+    ensure_bls12_381_insecure_test_key_1(request.key_id);
     ensure_derivation_path_is_valid(&request.derivation_path);
     let derivation_path = {
         let canister_id = request.canister_id.unwrap_or_else(ic_cdk::caller);
@@ -87,7 +87,7 @@ async fn vetkd_public_key(request: VetKDPublicKeyRequest) -> VetKDPublicKeyReply
 async fn vetkd_encrypted_key(request: VetKDEncryptedKeyRequest) -> VetKDEncryptedKeyReply {
     inc_call_count("vetkd_encrypted_key".to_string());
     ensure_call_is_paid(0);
-    ensure_bls12_381_insecure_mock_key_1(request.key_id);
+    ensure_bls12_381_insecure_test_key_1(request.key_id);
     ensure_derivation_path_is_valid(&request.public_key_derivation_path);
     let derivation_path = DerivationPath::new(
         ic_cdk::caller().as_slice(),
@@ -127,11 +127,11 @@ async fn vetkd_encrypted_key(request: VetKDEncryptedKeyRequest) -> VetKDEncrypte
     }
 }
 
-fn ensure_bls12_381_insecure_mock_key_1(key_id: VetKDKeyId) {
+fn ensure_bls12_381_insecure_test_key_1(key_id: VetKDKeyId) {
     if key_id.curve != VetKDCurve::Bls12_381 {
         ic_cdk::trap("unsupported key ID curve");
     }
-    if key_id.name.as_str() != "insecure_mock_key_1" {
+    if key_id.name.as_str() != "insecure_test_key_1" {
         ic_cdk::trap("unsupported key ID name");
     }
 }
