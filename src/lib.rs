@@ -23,26 +23,27 @@ thread_local! {
         );
 }
 
-const SEEDING_INTERVAL: Duration = Duration::from_secs(3600);
+// Seeding interval for the canister's random number generator (RNG).
+const RNG_SEEDING_INTERVAL: Duration = Duration::from_secs(3600);
 
 #[ic_cdk::init]
 fn init() {
     // Initialize randomness during canister install or reinstall
-    schedule_seeding(Duration::ZERO);
+    schedule_rng_seeding(Duration::ZERO);
 }
 
 #[ic_cdk::post_upgrade]
 fn post_upgrade() {
     // Initialize randomness after a canister upgrade
-    schedule_seeding(Duration::ZERO);
+    schedule_rng_seeding(Duration::ZERO);
 }
 
-fn schedule_seeding(duration: Duration) {
+fn schedule_rng_seeding(duration: Duration) {
     ic_cdk_timers::set_timer(duration, || {
         ic_cdk::spawn(async {
             seed_randomness().await;
             // Schedule reseeding on a timer with duration SEEDING_INTERVAL
-            schedule_seeding(SEEDING_INTERVAL);
+            schedule_rng_seeding(RNG_SEEDING_INTERVAL);
         })
     });
 }
