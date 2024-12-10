@@ -65,6 +65,6 @@ fn ensure_secp256k1_insecure_test_key_1(key_id: &EcdsaKeyId) {
         ic_cdk::trap("unsupported key ID curve");
     }
     if key_id.name.as_str() != "insecure_test_key_1" {
-        ic_cdk::trap("unsupported key ID name");
+        ic_cdk::trap(&format!("unsupported key ID name '{}'", key_id.name));
     }
 }
