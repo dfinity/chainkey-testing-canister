@@ -162,6 +162,9 @@ fn ensure_bip340secp256k1_insecure_test_key_1(key_id: &SchnorrKeyId) {
         ic_cdk::trap("unsupported key ID algorithm");
     }
     if key_id.name.as_str() != "insecure_test_key_1" {
-        ic_cdk::trap("unsupported key ID name");
+        ic_cdk::trap(&format!(
+            "unsupported key ID name: expected 'insecure_test_key_1' but got '{}'",
+            key_id.name
+        ));
     }
 }
