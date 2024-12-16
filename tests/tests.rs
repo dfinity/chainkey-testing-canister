@@ -152,9 +152,10 @@ fn should_verify_schnorr_bip341_secp256k1_signature() {
                 .expect("failed to create TapBranchHash"),
         );
 
-        // The `secp256k1` crate allows for verifitcation of arbitrary-sized messages,
-        // but the `bitcoin` uses an older version. In the following, convert
-        // `XOnlyPublicKey` from `bitcoin`'s `secp256k1` to `secp256k1`'s `XOnlyPublicKey`
+        // The `secp256k1` crate starting with `v0.30.0` allows for verification
+        // of arbitrary-sized messages, but the `bitcoin` currently uses an
+        // older version of `secp256k1`. Because of this, we need to convert
+        // `bitcoin::secp256k1::XOnlyPublicKey` to `secp256k1::XOnlyPublicKey`.
         let tweaked_key = secp256k1::XOnlyPublicKey::from_byte_array(
             &pk.tap_tweak(&secp256k1_engine, merkle_root)
                 .0
