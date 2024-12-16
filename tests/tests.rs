@@ -1,9 +1,7 @@
 use assert_matches::assert_matches;
-use bitcoin::{
-    schnorr::TapTweak,
-    secp256k1::{schnorr::Signature, Message, Secp256k1},
-    XOnlyPublicKey,
-};
+use bitcoin::key::Secp256k1;
+use bitcoin::{key::TapTweak, XOnlyPublicKey};
+
 use candid::{Decode, Encode, Principal};
 use chainkey_testing_canister::schnorr::SignWithBip341Aux;
 use chainkey_testing_canister::schnorr::SignWithSchnorrAux;
@@ -29,6 +27,7 @@ use ic_cdk::api::management_canister::ecdsa::EcdsaPublicKeyArgument;
 use ic_cdk::api::management_canister::ecdsa::EcdsaPublicKeyResponse;
 use ic_cdk::api::management_canister::ecdsa::SignWithEcdsaArgument;
 use ic_cdk::api::management_canister::ecdsa::SignWithEcdsaResponse;
+use secp256k1::schnorr::Signature;
 use serde_bytes::ByteBuf;
 
 pub const CANISTER_WASM: &[u8] =
@@ -112,49 +111,62 @@ fn should_verify_schnorr_bip340_secp256k1_signature() {
 #[test]
 fn should_verify_schnorr_bip341_secp256k1_signature() {
     let canister = CanisterSetup::default();
+    let message_sizes = [0, 1, 32, 100, 10_000, 2_000_000];
 
-    let derivation_path = vec!["test-derivation-path".as_bytes().to_vec()];
-    let key_id = SchnorrKeyId {
-        algorithm: SchnorrAlgorithm::Bip340Secp256k1,
-        name: "insecure_test_key_1".to_string(),
-    };
-    let message = vec![0xAB; 32];
+    for message_size in message_sizes {
+        let derivation_path = vec!["test-derivation-path".as_bytes().to_vec()];
+        let key_id = SchnorrKeyId {
+            algorithm: SchnorrAlgorithm::Bip340Secp256k1,
+            name: "insecure_test_key_1".to_string(),
+        };
+        let message = vec![0xAB; message_size];
 
-    let public_key_raw = canister
-        .schnorr_public_key(SchnorrPublicKeyArgs {
-            canister_id: None,
-            derivation_path: derivation_path.clone(),
-            key_id: key_id.clone(),
-        })
-        .public_key;
+        let public_key_raw = canister
+            .schnorr_public_key(SchnorrPublicKeyArgs {
+                canister_id: None,
+                derivation_path: derivation_path.clone(),
+                key_id: key_id.clone(),
+            })
+            .public_key;
 
-    let merkle_root_hash_bytes = vec![0xCD; 32];
+        let merkle_root_hash_bytes = vec![0xCD; 32];
 
-    let aux = SignWithSchnorrAux::Bip341(SignWithBip341Aux {
-        merkle_root_hash: ByteBuf::from(merkle_root_hash_bytes.clone()),
-    });
+        let aux = SignWithSchnorrAux::Bip341(SignWithBip341Aux {
+            merkle_root_hash: ByteBuf::from(merkle_root_hash_bytes.clone()),
+        });
 
-    let signature_raw = canister
-        .sign_with_schnorr(SignWithSchnorrArgs {
-            message: message.clone(),
-            derivation_path,
-            key_id,
-            aux: Some(aux),
-        })
-        .signature;
+        let signature_raw = canister
+            .sign_with_schnorr(SignWithSchnorrArgs {
+                message: message.clone(),
+                derivation_path,
+                key_id,
+                aux: Some(aux),
+            })
+            .signature;
 
-    let pk = XOnlyPublicKey::from_slice(&public_key_raw[1..]).unwrap();
+        let pk = XOnlyPublicKey::from_slice(&public_key_raw[1..]).unwrap();
 
-    let secp256k1_engine = Secp256k1::new();
-    let merkle_root = Some(
-        bitcoin::hashes::Hash::from_slice(&merkle_root_hash_bytes)
-            .expect("failed to create TapBranchHash"),
-    );
-    let tweaked_key = pk.tap_tweak(&secp256k1_engine, merkle_root).0.to_inner();
+        let secp256k1_engine = Secp256k1::new();
+        let merkle_root = Some(
+            bitcoin::hashes::Hash::from_slice(&merkle_root_hash_bytes)
+                .expect("failed to create TapBranchHash"),
+        );
 
-    let msg = Message::from_slice(&message).unwrap();
-    let sig = Signature::from_slice(&signature_raw).unwrap();
-    assert_matches!(sig.verify(&msg, &tweaked_key), Ok(_));
+        // The `secp256k1` crate allows for verifitcation of arbitrary-sized messages,
+        // but the `bitcoin` uses an older version. In the following, convert
+        // `XOnlyPublicKey` from `bitcoin`'s `secp256k1` to `secp256k1`'s `XOnlyPublicKey`
+        let tweaked_key = secp256k1::XOnlyPublicKey::from_byte_array(
+            &pk.tap_tweak(&secp256k1_engine, merkle_root)
+                .0
+                .to_inner()
+                .serialize(),
+        )
+        .unwrap();
+
+        let sig = Signature::from_slice(&signature_raw).unwrap();
+
+        assert_matches!(sig.verify(message.as_slice(), &tweaked_key), Ok(_));
+    }
 }
 
 #[test]
