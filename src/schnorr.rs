@@ -7,6 +7,7 @@ use candid::CandidType;
 use candid::Deserialize;
 use candid::Principal;
 use ic_cdk::update;
+use serde_bytes::ByteBuf;
 
 pub type CanisterId = Principal;
 
@@ -42,6 +43,18 @@ pub struct SignWithSchnorrArgs {
     pub message: Vec<u8>,
     pub derivation_path: Vec<Vec<u8>>,
     pub key_id: SchnorrKeyId,
+    pub aux: Option<SignWithSchnorrAux>,
+}
+
+#[derive(Eq, PartialEq, Debug, CandidType, Deserialize)]
+pub enum SignWithSchnorrAux {
+    #[serde(rename = "bip341")]
+    Bip341(SignWithBip341Aux),
+}
+
+#[derive(Eq, PartialEq, Debug, CandidType, Deserialize)]
+pub struct SignWithBip341Aux {
+    pub merkle_root_hash: ByteBuf,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -124,9 +137,24 @@ async fn sign_with_schnorr(args: SignWithSchnorrArgs) -> SignWithSchnorrResult {
             );
             let (derived_private_key, _chain_code) =
                 MASTER_SK_SECP256K1.derive_subkey(&derivation_path);
-            let signature =
-                with_rng(|rng| derived_private_key.sign_message_with_bip340(&args.message, rng))
-                    .await;
+            let signature = match args.aux {
+                Some(v) => match v {
+                    SignWithSchnorrAux::Bip341(bip341_aux) => with_rng(|rng| {
+                        derived_private_key.sign_message_with_bip341(
+                            &args.message,
+                            rng,
+                            &bip341_aux.merkle_root_hash,
+                        )
+                    })
+                    .await
+                    .expect("failed to sign with BIP341"),
+                },
+                None => {
+                    with_rng(|rng| derived_private_key.sign_message_with_bip340(&args.message, rng))
+                        .await
+                }
+            };
+
             SignWithSchnorrResult {
                 signature: signature.to_vec(),
             }

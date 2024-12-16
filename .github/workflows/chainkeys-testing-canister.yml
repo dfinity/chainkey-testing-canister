@@ -22,7 +22,7 @@ jobs:
       - name: Install PocketIC server Darwin
         uses: dfinity/pocketic@main
         with:
-          pocket-ic-server-version: "6.0.0"
+          pocket-ic-server-version: "7.0.0"
       - name: Build chainkeys-testing-canister Darwin
         run: |
           cargo build --target wasm32-unknown-unknown --release
@@ -41,7 +41,7 @@ jobs:
       - name: Install PocketIC server Linux
         uses: dfinity/pocketic@main
         with:
-          pocket-ic-server-version: "6.0.0"
+          pocket-ic-server-version: "7.0.0"
       - name: Build chainkeys-testing-canister Linux
         run: |
           cargo build --target wasm32-unknown-unknown --release
