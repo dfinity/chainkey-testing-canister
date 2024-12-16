@@ -3,7 +3,8 @@
     "chainkey_testing_canister": {
       "candid": "chainkey_testing_canister.did",
       "package": "chainkey_testing_canister",
-      "type": "rust"
+      "type": "rust",
+      "gzip": true
     }
   },
   "defaults": {
