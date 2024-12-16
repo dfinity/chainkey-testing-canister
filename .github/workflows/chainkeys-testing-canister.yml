@@ -25,7 +25,7 @@ jobs:
           pocket-ic-server-version: "7.0.0"
       - name: Build chainkeys-testing-canister Darwin
         run: |
-          cargo build --target wasm32-unknown-unknown --release
+          dfx build --check
       - name: Lint chainkeys-testing-canister Darwin
         run: |
           cargo fmt --all -- --check && cargo clippy --all-targets --all-features -- -D warnings
@@ -44,7 +44,7 @@ jobs:
           pocket-ic-server-version: "7.0.0"
       - name: Build chainkeys-testing-canister Linux
         run: |
-          cargo build --target wasm32-unknown-unknown --release
+          dfx build --check
       - name: Lint chainkeys-testing-canister Linux
         run: |
           cargo fmt --all -- --check && cargo clippy --all-targets --all-features -- -D warnings
