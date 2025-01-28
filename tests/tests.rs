@@ -246,7 +246,7 @@ fn should_consistently_derive_vetkey() {
         .expect("failed to create transport secret key");
     let encrypted_key_2 = canister
         .vetkd_derive_encrypted_key(VetKDDeriveEncryptedKeyRequest {
-            derivation_path: derivation_path,
+            derivation_path,
             derivation_id: derivation_id.clone(),
             encryption_public_key: tsk_2.public_key(),
             key_id,
