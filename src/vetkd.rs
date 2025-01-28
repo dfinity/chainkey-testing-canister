@@ -85,15 +85,15 @@ async fn vetkd_public_key(request: VetKDPublicKeyRequest) -> VetKDPublicKeyReply
 }
 
 #[update]
-async fn vetkd_derive_encrypted_key(request: VetKDDeriveEncryptedKeyRequest) -> VetKDDeriveEncryptedKeyReply {
+async fn vetkd_derive_encrypted_key(
+    request: VetKDDeriveEncryptedKeyRequest,
+) -> VetKDDeriveEncryptedKeyReply {
     inc_call_count("vetkd_derive_encrypted_key".to_string());
     ensure_call_is_paid(0);
     ensure_bls12_381_g2_insecure_test_key_1(request.key_id);
     ensure_derivation_path_is_valid(&request.derivation_path);
-    let derivation_path = DerivationPath::new(
-        ic_cdk::caller().as_slice(),
-        &request.derivation_path,
-    );
+    let derivation_path =
+        DerivationPath::new(ic_cdk::caller().as_slice(), &request.derivation_path);
     let tpk =
         TransportPublicKey::deserialize(&request.encryption_public_key).unwrap_or_else(
             |e| match e {

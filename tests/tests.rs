@@ -368,7 +368,10 @@ impl CanisterSetup {
         }
     }
 
-    pub fn vetkd_derive_encrypted_key(&self, args: VetKDDeriveEncryptedKeyRequest) -> VetKDDeriveEncryptedKeyReply {
+    pub fn vetkd_derive_encrypted_key(
+        &self,
+        args: VetKDDeriveEncryptedKeyRequest,
+    ) -> VetKDDeriveEncryptedKeyReply {
         let method = "vetkd_derive_encrypted_key";
         let result = self.env.update_call(
             self.canister_id,
@@ -377,9 +380,8 @@ impl CanisterSetup {
             Encode!(&args).expect("failed to encode args"),
         );
         match result {
-            Ok(WasmResult::Reply(bytes)) => {
-                Decode!(&bytes, VetKDDeriveEncryptedKeyReply).expect("failed to decode {method} result")
-            }
+            Ok(WasmResult::Reply(bytes)) => Decode!(&bytes, VetKDDeriveEncryptedKeyReply)
+                .expect("failed to decode {method} result"),
             Ok(WasmResult::Reject(error)) => {
                 panic!("canister rejected call to {method}: {error}")
             }
