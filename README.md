@@ -20,7 +20,7 @@ All APIs support a single key ID: `insecure_test_key_1`.
  
 For the IDs of the test keys and production keys that are deployed on mainnet and distributed among subnet nodes, see [the Threshold signatures feature reference](https://internetcomputer.org/docs/current/references/t-sigs-how-it-works#key-derivation) in the Internet Computer developer docs.
 
-For the time being, no fees are charged. If canister usage becomes excessive, we will introduce fees but aim to keep these fees significantly lower than the [fees of the production APIs](https://internetcomputer.org/docs/current/references/t-sigs-how-it-works#api-fee). The community is invited to top up the canister with cycles.
+For the time being, no fees are charged. If canister usage becomes excessive, we will introduce fees but aim to keep these fees significantly lower than the [fees of the production APIs](https://internetcomputer.org/docs/current/references/t-sigs-how-it-works#api-fees). The community is invited to top up the canister with cycles.
 
 As this repository contains the canister's source code, developers can also deploy their own, private instance of this canister.
 

@@ -16,8 +16,8 @@ use chainkey_testing_canister::schnorr::SchnorrPublicKeyResult;
 use chainkey_testing_canister::schnorr::SignWithSchnorrArgs;
 use chainkey_testing_canister::schnorr::SignWithSchnorrResult;
 use chainkey_testing_canister::vetkd::VetKDCurve;
-use chainkey_testing_canister::vetkd::VetKDEncryptedKeyReply;
-use chainkey_testing_canister::vetkd::VetKDEncryptedKeyRequest;
+use chainkey_testing_canister::vetkd::VetKDDeriveEncryptedKeyReply;
+use chainkey_testing_canister::vetkd::VetKDDeriveEncryptedKeyRequest;
 use chainkey_testing_canister::vetkd::VetKDKeyId;
 use chainkey_testing_canister::vetkd::VetKDPublicKeyReply;
 use chainkey_testing_canister::vetkd::VetKDPublicKeyRequest;
@@ -215,7 +215,7 @@ fn should_consistently_derive_vetkey() {
 
     let derivation_path = vec!["test-derivation-path".as_bytes().to_vec()];
     let key_id = VetKDKeyId {
-        curve: VetKDCurve::Bls12_381,
+        curve: VetKDCurve::Bls12_381_G2,
         name: "insecure_test_key_1".to_string(),
     };
     let derivation_id = b"test-derivation-id".to_vec();
@@ -231,8 +231,8 @@ fn should_consistently_derive_vetkey() {
     let tsk_1 = TransportSecretKey::from_seed([101; 32].to_vec())
         .expect("failed to create transport secret key");
     let encrypted_key_1 = canister
-        .vetkd_encrypted_key(VetKDEncryptedKeyRequest {
-            public_key_derivation_path: derivation_path.clone(),
+        .vetkd_derive_encrypted_key(VetKDDeriveEncryptedKeyRequest {
+            derivation_path: derivation_path.clone(),
             derivation_id: derivation_id.clone(),
             encryption_public_key: tsk_1.public_key(),
             key_id: key_id.clone(),
@@ -245,8 +245,8 @@ fn should_consistently_derive_vetkey() {
     let tsk_2 = TransportSecretKey::from_seed([102; 32].to_vec())
         .expect("failed to create transport secret key");
     let encrypted_key_2 = canister
-        .vetkd_encrypted_key(VetKDEncryptedKeyRequest {
-            public_key_derivation_path: derivation_path,
+        .vetkd_derive_encrypted_key(VetKDDeriveEncryptedKeyRequest {
+            derivation_path,
             derivation_id: derivation_id.clone(),
             encryption_public_key: tsk_2.public_key(),
             key_id,
@@ -368,8 +368,11 @@ impl CanisterSetup {
         }
     }
 
-    pub fn vetkd_encrypted_key(&self, args: VetKDEncryptedKeyRequest) -> VetKDEncryptedKeyReply {
-        let method = "vetkd_encrypted_key";
+    pub fn vetkd_derive_encrypted_key(
+        &self,
+        args: VetKDDeriveEncryptedKeyRequest,
+    ) -> VetKDDeriveEncryptedKeyReply {
+        let method = "vetkd_derive_encrypted_key";
         let result = self.env.update_call(
             self.canister_id,
             Principal::anonymous(),
@@ -377,9 +380,8 @@ impl CanisterSetup {
             Encode!(&args).expect("failed to encode args"),
         );
         match result {
-            Ok(WasmResult::Reply(bytes)) => {
-                Decode!(&bytes, VetKDEncryptedKeyReply).expect("failed to decode {method} result")
-            }
+            Ok(WasmResult::Reply(bytes)) => Decode!(&bytes, VetKDDeriveEncryptedKeyReply)
+                .expect("failed to decode {method} result"),
             Ok(WasmResult::Reject(error)) => {
                 panic!("canister rejected call to {method}: {error}")
             }

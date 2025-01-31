@@ -17,8 +17,9 @@ pub type CanisterId = Principal;
 
 #[derive(CandidType, Clone, Deserialize, Eq, PartialEq)]
 pub enum VetKDCurve {
-    #[serde(rename = "bls12_381")]
-    Bls12_381,
+    #[serde(rename = "bls12_381_g2")]
+    #[allow(non_camel_case_types)]
+    Bls12_381_G2,
 }
 
 #[derive(CandidType, Clone, Deserialize, Eq, PartialEq)]
@@ -40,15 +41,15 @@ pub struct VetKDPublicKeyReply {
 }
 
 #[derive(CandidType, Deserialize)]
-pub struct VetKDEncryptedKeyRequest {
-    pub public_key_derivation_path: Vec<Vec<u8>>,
+pub struct VetKDDeriveEncryptedKeyRequest {
     pub derivation_id: Vec<u8>,
-    pub key_id: VetKDKeyId,
     pub encryption_public_key: Vec<u8>,
+    pub derivation_path: Vec<Vec<u8>>,
+    pub key_id: VetKDKeyId,
 }
 
 #[derive(CandidType, Deserialize)]
-pub struct VetKDEncryptedKeyReply {
+pub struct VetKDDeriveEncryptedKeyReply {
     pub encrypted_key: Vec<u8>,
 }
 
@@ -71,7 +72,7 @@ lazy_static::lazy_static! {
 #[update]
 async fn vetkd_public_key(request: VetKDPublicKeyRequest) -> VetKDPublicKeyReply {
     inc_call_count("vetkd_public_key".to_string());
-    ensure_bls12_381_insecure_test_key_1(request.key_id);
+    ensure_bls12_381_g2_insecure_test_key_1(request.key_id);
     ensure_derivation_path_is_valid(&request.derivation_path);
     let derivation_path = {
         let canister_id = request.canister_id.unwrap_or_else(ic_cdk::caller);
@@ -84,15 +85,15 @@ async fn vetkd_public_key(request: VetKDPublicKeyRequest) -> VetKDPublicKeyReply
 }
 
 #[update]
-async fn vetkd_encrypted_key(request: VetKDEncryptedKeyRequest) -> VetKDEncryptedKeyReply {
-    inc_call_count("vetkd_encrypted_key".to_string());
+async fn vetkd_derive_encrypted_key(
+    request: VetKDDeriveEncryptedKeyRequest,
+) -> VetKDDeriveEncryptedKeyReply {
+    inc_call_count("vetkd_derive_encrypted_key".to_string());
     ensure_call_is_paid(0);
-    ensure_bls12_381_insecure_test_key_1(request.key_id);
-    ensure_derivation_path_is_valid(&request.public_key_derivation_path);
-    let derivation_path = DerivationPath::new(
-        ic_cdk::caller().as_slice(),
-        &request.public_key_derivation_path,
-    );
+    ensure_bls12_381_g2_insecure_test_key_1(request.key_id);
+    ensure_derivation_path_is_valid(&request.derivation_path);
+    let derivation_path =
+        DerivationPath::new(ic_cdk::caller().as_slice(), &request.derivation_path);
     let tpk =
         TransportPublicKey::deserialize(&request.encryption_public_key).unwrap_or_else(
             |e| match e {
@@ -122,13 +123,13 @@ async fn vetkd_encrypted_key(request: VetKDEncryptedKeyRequest) -> VetKDEncrypte
     )
     .unwrap_or_else(|_e| ic_cdk::trap("bad key share"));
 
-    VetKDEncryptedKeyReply {
+    VetKDDeriveEncryptedKeyReply {
         encrypted_key: ek.serialize().to_vec(),
     }
 }
 
-fn ensure_bls12_381_insecure_test_key_1(key_id: VetKDKeyId) {
-    if key_id.curve != VetKDCurve::Bls12_381 {
+fn ensure_bls12_381_g2_insecure_test_key_1(key_id: VetKDKeyId) {
+    if key_id.curve != VetKDCurve::Bls12_381_G2 {
         ic_cdk::trap("unsupported key ID curve");
     }
     if key_id.name.as_str() != "insecure_test_key_1" {
