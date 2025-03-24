@@ -20,8 +20,8 @@ getrandom = { version = "0.2", features = ["custom"] }
 hex = "0.4"
 ic-cdk = "0.16.0"
 ic-cdk-timers = "0.10.0"
-ic-crypto-ed25519 = { git = "https://github.com/dfinity/ic" }
-ic-crypto-secp256k1 = { git = "https://github.com/dfinity/ic" }
+ic-ed25519 = "0.2.0"
+ic-secp256k1 = "0.1.0"
 ic-crypto-internal-bls12-381-vetkd = { git = "https://github.com/dfinity/ic" }
 ic-crypto-internal-bls12-381-type = { git = "https://github.com/dfinity/ic" }
 ic-stable-structures = "0.6.5"
@@ -37,5 +37,5 @@ bitcoin = "0.32.5"
 ed25519-dalek = "2.1"
 ic-vetkd-utils = { git = "https://github.com/dfinity/ic" }
 k256 = "0.13.4"
-pocket-ic = "6.0.0"
-secp256k1 = { version = "0.30.0", features = ["global-context"] } 
+pocket-ic = "7.0.0"
+secp256k1 = { version = "0.30.0", features = ["global-context"] }

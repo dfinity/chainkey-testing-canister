@@ -10,7 +10,7 @@ In particular, the canister provides fake implementations of the following Inter
 * [Threshold Schnorr](https://internetcomputer.org/docs/current/developer-docs/smart-contracts/signatures/t-schnorr)
     * [schnorr_public_key](https://internetcomputer.org/docs/current/references/ic-interface-spec#ic-schnorr_public_key), [sign_with_schnorr](https://internetcomputer.org/docs/current/references/ic-interface-spec#ic-sign_with_schnorr)
 * Preview: [Threshold Key Derivation (vetKeys)](https://internetcomputer.org/docs/current/developer-docs/smart-contracts/encryption/vetkeys)
-    * `vetkd_public_key`, `vetkd_encrypted_key` (see [API proposal PR](https://github.com/dfinity/interface-spec/pull/158))
+    * `vetkd_public_key`, `vetkd_derive_key` (see [API proposal PR](https://github.com/dfinity/portal/pull/3763))
 
 ## Usage
 

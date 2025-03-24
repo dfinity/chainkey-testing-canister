@@ -1,7 +1,6 @@
 use crate::ensure_call_is_paid;
 use crate::inc_call_count;
 
-use super::ensure_derivation_path_is_valid;
 use super::with_rng;
 use candid::CandidType;
 use candid::Deserialize;
@@ -9,7 +8,7 @@ use candid::Principal;
 use ic_cdk::update;
 use ic_crypto_internal_bls12_381_type::{G2Affine, Scalar};
 use ic_crypto_internal_bls12_381_vetkd::{
-    DerivationPath, DerivedPublicKey, EncryptedKey, EncryptedKeyShare, TransportPublicKey,
+    DerivationContext, DerivedPublicKey, EncryptedKey, EncryptedKeyShare, TransportPublicKey,
     TransportPublicKeyDeserializationError,
 };
 
@@ -31,7 +30,7 @@ pub struct VetKDKeyId {
 #[derive(CandidType, Deserialize)]
 pub struct VetKDPublicKeyRequest {
     pub canister_id: Option<CanisterId>,
-    pub derivation_path: Vec<Vec<u8>>,
+    pub context: Vec<u8>,
     pub key_id: VetKDKeyId,
 }
 
@@ -41,15 +40,15 @@ pub struct VetKDPublicKeyReply {
 }
 
 #[derive(CandidType, Deserialize)]
-pub struct VetKDDeriveEncryptedKeyRequest {
-    pub derivation_id: Vec<u8>,
-    pub encryption_public_key: Vec<u8>,
-    pub derivation_path: Vec<Vec<u8>>,
+pub struct VetKDDeriveKeyRequest {
+    pub input: Vec<u8>,
+    pub context: Vec<u8>,
+    pub transport_public_key: Vec<u8>,
     pub key_id: VetKDKeyId,
 }
 
 #[derive(CandidType, Deserialize)]
-pub struct VetKDDeriveEncryptedKeyReply {
+pub struct VetKDDeriveKeyReply {
     pub encrypted_key: Vec<u8>,
 }
 
@@ -73,58 +72,53 @@ lazy_static::lazy_static! {
 async fn vetkd_public_key(request: VetKDPublicKeyRequest) -> VetKDPublicKeyReply {
     inc_call_count("vetkd_public_key".to_string());
     ensure_bls12_381_g2_insecure_test_key_1(request.key_id);
-    ensure_derivation_path_is_valid(&request.derivation_path);
-    let derivation_path = {
+    let context = {
         let canister_id = request.canister_id.unwrap_or_else(ic_cdk::caller);
-        DerivationPath::new(canister_id.as_slice(), &request.derivation_path)
+        DerivationContext::new(canister_id.as_slice(), &request.context)
     };
-    let derived_public_key = DerivedPublicKey::compute_derived_key(&MASTER_PK, &derivation_path);
+    let derived_public_key = DerivedPublicKey::compute_derived_key(&MASTER_PK, &context);
     VetKDPublicKeyReply {
         public_key: derived_public_key.serialize().to_vec(),
     }
 }
 
 #[update]
-async fn vetkd_derive_encrypted_key(
-    request: VetKDDeriveEncryptedKeyRequest,
-) -> VetKDDeriveEncryptedKeyReply {
-    inc_call_count("vetkd_derive_encrypted_key".to_string());
+async fn vetkd_derive_key(request: VetKDDeriveKeyRequest) -> VetKDDeriveKeyReply {
+    inc_call_count("vetkd_derive_key".to_string());
     ensure_call_is_paid(0);
+    ensure_transport_public_key_is_48_bytes(&request.transport_public_key);
     ensure_bls12_381_g2_insecure_test_key_1(request.key_id);
-    ensure_derivation_path_is_valid(&request.derivation_path);
-    let derivation_path =
-        DerivationPath::new(ic_cdk::caller().as_slice(), &request.derivation_path);
+    let context = DerivationContext::new(ic_cdk::caller().as_slice(), &request.context);
     let tpk =
-        TransportPublicKey::deserialize(&request.encryption_public_key).unwrap_or_else(
+        TransportPublicKey::deserialize(&request.transport_public_key).unwrap_or_else(
             |e| match e {
                 TransportPublicKeyDeserializationError::InvalidPublicKey => {
-                    ic_cdk::trap("invalid encryption public key")
+                    ic_cdk::trap("invalid transport public key")
                 }
             },
         );
     let eks = with_rng(|rng| {
-        EncryptedKeyShare::create(
-            rng,
-            &MASTER_PK,
-            &MASTER_SK,
-            &tpk,
-            &derivation_path,
-            &request.derivation_id,
-        )
+        EncryptedKeyShare::create(rng, &MASTER_PK, &MASTER_SK, &tpk, &context, &request.input)
     })
     .await;
-    let ek = EncryptedKey::combine(
-        &vec![(0, MASTER_PK.clone(), eks)],
+    let ek = EncryptedKey::combine_all(
+        &vec![(0, eks)],
         1,
         &MASTER_PK,
         &tpk,
-        &derivation_path,
-        &request.derivation_id,
+        &context,
+        &request.input,
     )
     .unwrap_or_else(|_e| ic_cdk::trap("bad key share"));
 
-    VetKDDeriveEncryptedKeyReply {
+    VetKDDeriveKeyReply {
         encrypted_key: ek.serialize().to_vec(),
+    }
+}
+
+fn ensure_transport_public_key_is_48_bytes(transport_public_key: &[u8]) {
+    if transport_public_key.len() != 48 {
+        ic_cdk::trap("transport public key must be 48 bytes")
     }
 }
 
