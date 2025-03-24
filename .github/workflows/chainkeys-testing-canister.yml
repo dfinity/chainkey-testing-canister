@@ -22,7 +22,7 @@ jobs:
       - name: Install PocketIC server Darwin
         uses: dfinity/pocketic@main
         with:
-          pocket-ic-server-version: "7.0.0"
+          pocket-ic-server-version: "8.0.0"
       - name: Build chainkeys-testing-canister Darwin
         run: |
           dfx build --check
