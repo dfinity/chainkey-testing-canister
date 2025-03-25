@@ -7,7 +7,7 @@ use chainkey_testing_canister::schnorr::SignWithBip341Aux;
 use chainkey_testing_canister::schnorr::SignWithSchnorrAux;
 use ic_cdk::api::management_canister::main::CanisterId;
 use ic_vetkd_utils::TransportSecretKey;
-use pocket_ic::{PocketIc, WasmResult};
+use pocket_ic::PocketIc;
 
 use chainkey_testing_canister::schnorr::SchnorrAlgorithm;
 use chainkey_testing_canister::schnorr::SchnorrKeyId;
@@ -16,8 +16,8 @@ use chainkey_testing_canister::schnorr::SchnorrPublicKeyResult;
 use chainkey_testing_canister::schnorr::SignWithSchnorrArgs;
 use chainkey_testing_canister::schnorr::SignWithSchnorrResult;
 use chainkey_testing_canister::vetkd::VetKDCurve;
-use chainkey_testing_canister::vetkd::VetKDDeriveEncryptedKeyReply;
-use chainkey_testing_canister::vetkd::VetKDDeriveEncryptedKeyRequest;
+use chainkey_testing_canister::vetkd::VetKDDeriveKeyReply;
+use chainkey_testing_canister::vetkd::VetKDDeriveKeyRequest;
 use chainkey_testing_canister::vetkd::VetKDKeyId;
 use chainkey_testing_canister::vetkd::VetKDPublicKeyReply;
 use chainkey_testing_canister::vetkd::VetKDPublicKeyRequest;
@@ -213,17 +213,17 @@ fn should_verify_schnorr_ed25519_signature() {
 fn should_consistently_derive_vetkey() {
     let canister = CanisterSetup::default();
 
-    let derivation_path = vec!["test-derivation-path".as_bytes().to_vec()];
+    let context = b"test-context".to_vec();
     let key_id = VetKDKeyId {
         curve: VetKDCurve::Bls12_381_G2,
         name: "insecure_test_key_1".to_string(),
     };
-    let derivation_id = b"test-derivation-id".to_vec();
+    let input = b"test-input".to_vec();
 
     let public_key_bytes = canister
         .vetkd_public_key(VetKDPublicKeyRequest {
             canister_id: None,
-            derivation_path: derivation_path.clone(),
+            context: context.clone(),
             key_id: key_id.clone(),
         })
         .public_key;
@@ -231,29 +231,29 @@ fn should_consistently_derive_vetkey() {
     let tsk_1 = TransportSecretKey::from_seed([101; 32].to_vec())
         .expect("failed to create transport secret key");
     let encrypted_key_1 = canister
-        .vetkd_derive_encrypted_key(VetKDDeriveEncryptedKeyRequest {
-            derivation_path: derivation_path.clone(),
-            derivation_id: derivation_id.clone(),
-            encryption_public_key: tsk_1.public_key(),
+        .vetkd_derive_key(VetKDDeriveKeyRequest {
+            context: context.clone(),
+            input: input.clone(),
+            transport_public_key: tsk_1.public_key(),
             key_id: key_id.clone(),
         })
         .encrypted_key;
     let decrypted_key_1 = tsk_1
-        .decrypt(&encrypted_key_1, &public_key_bytes, &derivation_id)
+        .decrypt(&encrypted_key_1, &public_key_bytes, &input)
         .expect("failed to decrypted vetKey");
 
     let tsk_2 = TransportSecretKey::from_seed([102; 32].to_vec())
         .expect("failed to create transport secret key");
     let encrypted_key_2 = canister
-        .vetkd_derive_encrypted_key(VetKDDeriveEncryptedKeyRequest {
-            derivation_path,
-            derivation_id: derivation_id.clone(),
-            encryption_public_key: tsk_2.public_key(),
+        .vetkd_derive_key(VetKDDeriveKeyRequest {
+            context,
+            input: input.clone(),
+            transport_public_key: tsk_2.public_key(),
             key_id,
         })
         .encrypted_key;
     let decrypted_key_2 = tsk_2
-        .decrypt(&encrypted_key_2, &public_key_bytes, &derivation_id)
+        .decrypt(&encrypted_key_2, &public_key_bytes, &input)
         .expect("failed to decrypted vetKey");
 
     assert_eq!(decrypted_key_1, decrypted_key_2);
@@ -282,11 +282,8 @@ impl CanisterSetup {
             Encode!(&args).expect("failed to encode ecdsa_public_key args"),
         );
         match result {
-            Ok(WasmResult::Reply(bytes)) => {
+            Ok(bytes) => {
                 Decode!(&bytes, EcdsaPublicKeyResponse).expect("failed to decode {method} result")
-            }
-            Ok(WasmResult::Reject(error)) => {
-                panic!("canister rejected call to {method}: {error}")
             }
             Err(user_error) => panic!("{method} user error: {user_error}"),
         }
@@ -301,11 +298,8 @@ impl CanisterSetup {
             Encode!(&args).expect("failed to encode args"),
         );
         match result {
-            Ok(WasmResult::Reply(bytes)) => {
+            Ok(bytes) => {
                 Decode!(&bytes, SignWithEcdsaResponse).expect("failed to decode {method} result")
-            }
-            Ok(WasmResult::Reject(error)) => {
-                panic!("canister rejected call to {method}: {error}")
             }
             Err(user_error) => panic!("{method} user error: {user_error}"),
         }
@@ -320,11 +314,8 @@ impl CanisterSetup {
             Encode!(&args).expect("failed to encode args"),
         );
         match result {
-            Ok(WasmResult::Reply(bytes)) => {
+            Ok(bytes) => {
                 Decode!(&bytes, SchnorrPublicKeyResult).expect("failed to decode {method} result")
-            }
-            Ok(WasmResult::Reject(error)) => {
-                panic!("canister rejected call to {method}: {error}")
             }
             Err(user_error) => panic!("{method} user error: {user_error}"),
         }
@@ -339,11 +330,8 @@ impl CanisterSetup {
             Encode!(&args).expect("failed to encode args"),
         );
         match result {
-            Ok(WasmResult::Reply(bytes)) => {
+            Ok(bytes) => {
                 Decode!(&bytes, SignWithSchnorrResult).expect("failed to decode {method} result")
-            }
-            Ok(WasmResult::Reject(error)) => {
-                panic!("canister rejected call to {method}: {error}")
             }
             Err(user_error) => panic!("{method} user error: {user_error}"),
         }
@@ -358,21 +346,15 @@ impl CanisterSetup {
             Encode!(&args).expect("failed to encode args"),
         );
         match result {
-            Ok(WasmResult::Reply(bytes)) => {
+            Ok(bytes) => {
                 Decode!(&bytes, VetKDPublicKeyReply).expect("failed to decode {method} result")
-            }
-            Ok(WasmResult::Reject(error)) => {
-                panic!("canister rejected call to {method}: {error}")
             }
             Err(user_error) => panic!("{method} user error: {user_error}"),
         }
     }
 
-    pub fn vetkd_derive_encrypted_key(
-        &self,
-        args: VetKDDeriveEncryptedKeyRequest,
-    ) -> VetKDDeriveEncryptedKeyReply {
-        let method = "vetkd_derive_encrypted_key";
+    pub fn vetkd_derive_key(&self, args: VetKDDeriveKeyRequest) -> VetKDDeriveKeyReply {
+        let method = "vetkd_derive_key";
         let result = self.env.update_call(
             self.canister_id,
             Principal::anonymous(),
@@ -380,10 +362,8 @@ impl CanisterSetup {
             Encode!(&args).expect("failed to encode args"),
         );
         match result {
-            Ok(WasmResult::Reply(bytes)) => Decode!(&bytes, VetKDDeriveEncryptedKeyReply)
-                .expect("failed to decode {method} result"),
-            Ok(WasmResult::Reject(error)) => {
-                panic!("canister rejected call to {method}: {error}")
+            Ok(bytes) => {
+                Decode!(&bytes, VetKDDeriveKeyReply).expect("failed to decode {method} result")
             }
             Err(user_error) => panic!("{method} user error: {user_error}"),
         }
