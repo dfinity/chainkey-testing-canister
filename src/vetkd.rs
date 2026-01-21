@@ -101,15 +101,8 @@ async fn vetkd_derive_key(request: VetKDDeriveKeyRequest) -> VetKDDeriveKeyReply
         EncryptedKeyShare::create(rng, &MASTER_PK, &MASTER_SK, &tpk, &context, &request.input)
     })
     .await;
-    let ek = EncryptedKey::combine_all(
-        &vec![(0, eks)],
-        1,
-        &MASTER_PK,
-        &tpk,
-        &context,
-        &request.input,
-    )
-    .unwrap_or_else(|_e| ic_cdk::trap("bad key share"));
+    let ek = EncryptedKey::combine_all(&[(0, eks)], 1, &MASTER_PK, &tpk, &context, &request.input)
+        .unwrap_or_else(|_e| ic_cdk::trap("bad key share"));
 
     VetKDDeriveKeyReply {
         encrypted_key: ek.serialize().to_vec(),

@@ -19,10 +19,6 @@ jobs:
       - uses: actions/checkout@v1
       - name: Provision Darwin
         run: bash .github/workflows/provision-darwin.sh
-      - name: Install PocketIC server Darwin
-        uses: dfinity/pocketic@main
-        with:
-          pocket-ic-server-version: "8.0.0"
       - name: Build chainkeys-testing-canister Darwin
         run: |
           dfx build --check
